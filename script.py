@@ -15,7 +15,7 @@ def parse_book_name(response):
         return sanitize_filename(title).strip()
 
 
-def download_txt(url, title, response, number, folder):
+def download_txt(url, title, number, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
     book = os.path.join(folder, f'{number}. {title}.txt')
@@ -29,19 +29,31 @@ def download_txt(url, title, response, number, folder):
         return
 
 
+def download_comments(response, number, folder):
+    folder = os.path.join(folder)
+    os.makedirs(folder, exist_ok=True)
+    soup = BeautifulSoup(response.text, 'lxml')
+    comments = soup.find_all('div', class_='texts')
+    if comments:
+        comments_path = os.path.join(folder, f'{number}.txt')
+        with open(comments_path, 'w+') as comment_file:
+            for comment in comments:
+                comment_text = comment.find('span', class_='black').text
+                comment_file.write(comment_text + '\n')
+
+
 def parse_book_image(response):
     soup = BeautifulSoup(response.content, 'lxml')
     image_soup = soup.select_one('div.bookimage img')['src']
     return image_soup
 
 
-def download_book_image(response, image_soup, url, folder):
+def download_book_image(image_soup, url, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
     image_url = urllib.parse.urljoin(url, image_soup)
     image_response = requests.get(image_url)
     image_response.raise_for_status()
-    parse_book_name(response)
     image = os.path.join(folder, sanitize_filename(image_soup))
     with open(image, 'wb') as image_file:
         image_file.write(image_response.content)
@@ -56,10 +68,11 @@ def main():
             response.raise_for_status()
             title = parse_book_name(response)
             if title:
-                download_txt(url, title, response, number, folder='books/')
+                download_txt(url, title, number, folder='books/')
+                download_comments(response, number, folder='comments/')
                 image_soup = parse_book_image(response)
                 if 'nopic.gif' not in sanitize_filename(image_soup):
-                    download_book_image(response, image_soup, url, folder='covers/')
+                    download_book_image(image_soup, url, folder='covers/')
         except requests.HTTPError:
             print(f'No page at {name_url}')
 
