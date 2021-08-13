@@ -1,73 +1,67 @@
-import requests
 import os
+import urllib.parse
+
+import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 
 
-def check_for_directory(filepath):
+def parse_book_name(response):
+    soup = BeautifulSoup(response.text, 'lxml')
+    title_soup = soup.find('div', id='content')
+    if title_soup:
+        title_text = title_soup.find('h1').text
+        title, author = title_text.strip().split(' :: ')
+        return sanitize_filename(title).strip()
+
+
+def download_txt(url, title, response, number, folder):
+    folder = os.path.join(folder)
+    os.makedirs(folder, exist_ok=True)
+    book = os.path.join(folder, f'{number}. {title}.txt')
+    book_url = '{}txt.php?id={}'.format(url, number)
+    text_response = requests.get(book_url)
+    text_response.raise_for_status()
     try:
-        os.makedirs(filepath)
+        with open(book, 'wb') as file:
+            file.write(text_response.content)
     except FileExistsError:
         return
 
 
-def check_for_redirect(url, i):
-    response = requests.head(url.format(i), allow_redirects=True)
-    response.raise_for_status()
-    if response.history:
-        raise requests.HTTPError
-
-
-def parse_book_name(i):
-    response = requests.get(f'https://tululu.org/b{i}')
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'lxml')
-    title, author = soup.find('h1').text.strip().split(sep='\xa0 :: \xa0 ')
-    title = sanitize_filename(title)
-    return title
-
-
-def parse_book_image(url, folder, name, i):
-    response = requests.get(f'https://tululu.org/b{i}')
-    response.raise_for_status()
+def parse_book_image(response):
     soup = BeautifulSoup(response.content, 'lxml')
-    image_url = soup.find('img', class_='book-image')['src']
-    if 'nopic' is not in image_url:
-        
+    image_soup = soup.select_one('div.bookimage img')['src']
+    return image_soup
 
 
-def download_txt(url, folder):
-    for i in range(1, 11):
-        try:
-            check_for_redirect(url, i)
-            name = parse_book_name(i)
-            book = os.path.join(folder, f'{i}. {name}.txt')
-            response = requests.get(url.format(i))
-            response.raise_for_status()
-            with open(book, 'wb') as file:
-                file.write(response.content)
-
-        except requests.HTTPError:
-            continue
-    print('Your books are ready!')
-
-
-def test(folder, url, name):
-    name = sanitize_filename(name)
-    print(name)
-    book = os.path.join(folder, f'{name}.txt')
-    response = requests.get(url.format(4))
-    response.raise_for_status()
-    with open(book, 'wb') as file:
-        file.write(response.content)
+def download_book_image(response, image_soup, url, folder):
+    folder = os.path.join(folder)
+    os.makedirs(folder, exist_ok=True)
+    image_url = urllib.parse.urljoin(url, image_soup)
+    image_response = requests.get(image_url)
+    image_response.raise_for_status()
+    parse_book_name(response)
+    image = os.path.join(folder, sanitize_filename(image_soup))
+    with open(image, 'wb') as image_file:
+        image_file.write(image_response.content)
 
 
 def main():
-    url = "https://tululu.org/txt.php?id={}"
-    folder = 'books'
-    check_for_directory(folder)
-    download_txt(url, folder)
-    # test(folder, url, 'Али\\би')
+    url = 'https://tululu.org/'
+    for number in range(1, 11):
+        name_url = urllib.parse.urljoin(url, 'b{}/'.format(number))
+        try:
+            response = requests.get(name_url)
+            response.raise_for_status()
+            title = parse_book_name(response)
+            if title:
+                download_txt(url, title, response, number, folder='books/')
+                image_soup = parse_book_image(response)
+                if 'nopic.gif' not in sanitize_filename(image_soup):
+                    download_book_image(response, image_soup, url, folder='covers/')
+        except requests.HTTPError:
+            print(f'No page at {name_url}')
 
 
 if __name__ == '__main__':
