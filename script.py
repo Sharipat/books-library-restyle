@@ -42,6 +42,16 @@ def download_comments(response, number, folder):
                 comment_file.write(comment_text + '\n')
 
 
+def parse_book_genre(response, title):
+    soup = BeautifulSoup(response.text, 'lxml')
+    genres_soup = soup.find_all('div', id='content')
+    genres = []
+    for genre in genres_soup:
+        genre = genre.find('span', class_='d_book').text.strip().split(': \xa0')
+        genres.append(sanitize_filename(genre[1]))
+    print(f'Заголовок: {title} \n{genres}')
+
+
 def parse_book_image(response):
     soup = BeautifulSoup(response.content, 'lxml')
     image_soup = soup.select_one('div.bookimage img')['src']
@@ -59,6 +69,9 @@ def download_book_image(image_soup, url, folder):
         image_file.write(image_response.content)
 
 
+def parse_book_page(title, author, url, genre, )
+
+
 def main():
     url = 'https://tululu.org/'
     for number in range(1, 11):
@@ -68,11 +81,12 @@ def main():
             response.raise_for_status()
             title = parse_book_name(response)
             if title:
-                download_txt(url, title, number, folder='books/')
-                download_comments(response, number, folder='comments/')
-                image_soup = parse_book_image(response)
-                if 'nopic.gif' not in sanitize_filename(image_soup):
-                    download_book_image(image_soup, url, folder='covers/')
+                parse_book_genre(response, title)
+                #download_txt(url, title, number, folder='books/')
+                #download_comments(response, number, folder='comments/')
+                #image_soup = parse_book_image(response)
+                #if 'nopic.gif' not in sanitize_filename(image_soup):
+                    #download_book_image(image_soup, url, folder='covers/')
         except requests.HTTPError:
             print(f'No page at {name_url}')
 
