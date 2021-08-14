@@ -122,7 +122,6 @@ def main():
                 genre = parse_book_genre(response)
                 comments = download_comments(response, number, folder='comments/')
                 page_info = parse_book_page(number, name_url, title, author, genre, comments)
-                print(page_info)
                 image_soup = parse_book_image(response)
                 if 'nopic.gif' not in sanitize_filename(image_soup):
                     download_book_image(image_soup, url, folder='covers/')
