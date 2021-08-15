@@ -1,6 +1,7 @@
 import argparse
 import os
 from urllib.parse import urljoin
+from tqdm import trange
 
 import requests
 from bs4 import BeautifulSoup
@@ -78,13 +79,11 @@ def download_book_image(image_soup, url, folder):
         image_file.write(image_response.content)
 
 
-def parse_book_page(number, name_url, title, author, genre, comments):
-    page_info = {'Номер страницы: ': number,
-                 'Адрес страницы: ': name_url,
-                 'Жанр: ': genre,
-                 'Автор: ': author,
+def parse_book_page(title, author, genre, comments):
+    page_info = {'Автор: ': author,
                  'Заголовок: ': title,
-                 'Комментарии: ': comments,
+                 'Жанр: ': genre,
+                 'Комментарии: ': comments
                  }
     return page_info
 
@@ -109,19 +108,19 @@ def parse_book_args():
 def main():
     args = parse_book_args()
     url = 'https://tululu.org/'
-    for number in range(args.start_id, args.end_id):
+    for number in trange(args.start_id, args.end_id):
         name_url = urljoin(url, 'b{}/'.format(number))
         try:
             response = requests.get(name_url)
             response.raise_for_status()
-            print(response.history)
-            if response.history is None:
+            if not response.history:
                 title, author = parse_book_name(response)
                 parse_book_genre(response)
                 download_txt(url, title, number, folder='books/')
                 genre = parse_book_genre(response)
                 comments = download_comments(response, number, folder='comments/')
-                page_info = parse_book_page(number, name_url, title, author, genre, comments)
+                page_info = parse_book_page(title, author, genre, comments)
+                print(page_info)
                 image_soup = parse_book_image(response)
                 if 'nopic.gif' not in sanitize_filename(image_soup):
                     download_book_image(image_soup, url, folder='covers/')
