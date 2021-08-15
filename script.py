@@ -1,11 +1,11 @@
 import argparse
 import os
 from urllib.parse import urljoin
-from tqdm import trange
 
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
+from tqdm import trange
 
 
 def check_for_redirect(response):
