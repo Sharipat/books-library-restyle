@@ -108,7 +108,7 @@ def parse_book_args():
 def main():
     args = parse_book_args()
     url = 'https://tululu.org/'
-    for number in trange(args.start_id, args.end_id):
+    for number in trange(args.start_id, (args.end_id +1)):
         name_url = urljoin(url, 'b{}/'.format(number))
         try:
             response = requests.get(name_url)
