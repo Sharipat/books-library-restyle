@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 
 import requests
 from bs4 import BeautifulSoup
@@ -21,12 +21,12 @@ def parse_book_name(soup):
     return title.strip(), author.strip()
 
 
-def download_txt(url, title, number, folder):
+def download_txt(base_url, title, number, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
     book = os.path.join(folder, f'{number}. {title}.txt')
-    book_url = urljoin(url, 'txt.php?id={}'.format(number))
-    text_response = requests.get(book_url)
+    payload = {'txt.php': f'id={number}'}
+    text_response = requests.get(base_url, params=payload)
     text_response.raise_for_status()
     with open(book, 'w+') as file:
         file.write(text_response.text)
@@ -82,7 +82,7 @@ def main():
     args = parse_book_args()
     base_url = 'https://tululu.org/'
     for number in trange(args.start_id, (args.end_id + 1)):
-        url = urljoin(base_url, 'b{}/'.format(number))
+        url = urlencode(urljoin(base_url, 'b{}/'.format(number)))
         try:
             response = requests.get(url)
             response.raise_for_status()
