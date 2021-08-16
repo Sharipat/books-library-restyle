@@ -1,7 +1,6 @@
 import argparse
-import logging
 import os
-from urllib.parse import urljoin, urlencode
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,20 +27,20 @@ def download_txt(base_url, title, number, folder):
     payload = {'txt.php': f'id={number}'}
     text_response = requests.get(base_url, params=payload)
     text_response.raise_for_status()
-    with open(book, 'w+') as file:
-        file.write(text_response.text)
+    with open(book, 'wb') as file:
+        file.write(text_response.content)
 
 
 def parse_comments(soup):
     comments = soup.select('div.texts span')
     if comments:
-        comment_text = [comment for comment in comments]
+        comment_text = [comment.text for comment in comments]
         return comment_text
 
 
 def parse_book_genre(soup):
     genres_soup = soup.select('span.d_book a')
-    genres = [genre for genre in genres_soup]
+    genres = [genre.text for genre in genres_soup]
     return genres
 
 
@@ -50,10 +49,10 @@ def parse_book_image(response):
     return soup.select_one('div.bookimage img')['src']
 
 
-def download_book_image(image_src, url, folder):
+def download_book_image(image_src, base_url, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
-    image_url = urljoin(url, image_src)
+    image_url = urljoin(base_url, image_src)
     image_response = requests.get(image_url)
     image_response.raise_for_status()
     image = os.path.join(folder, sanitize_filename(image_src))
@@ -82,7 +81,7 @@ def main():
     args = parse_book_args()
     base_url = 'https://tululu.org/'
     for number in trange(args.start_id, (args.end_id + 1)):
-        url = urlencode(urljoin(base_url, 'b{}/'.format(number)))
+        url = urljoin(base_url, 'b{}/'.format(number))
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -97,7 +96,6 @@ def main():
                          'Жанр: ': genre,
                          'Комментарии: ': comments
                          }
-            logging.info(page_info)
             image_src = parse_book_image(response)
             if 'nopic.gif' not in sanitize_filename(image_src):
                 download_book_image(image_src, base_url, folder='covers/')
