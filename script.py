@@ -24,11 +24,11 @@ def download_txt(base_url, title, number, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
     book = os.path.join(folder, f'{number}. {title}.txt')
-    payload = {'txt.php': f'id={number}'}
-    text_response = requests.get(base_url, params=payload)
+    payload = {'id': number }
+    text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
-    with open(book, 'wb') as file:
-        file.write(text_response.content)
+    with open(book, "w", encoding="utf-8") as file:
+        file.write(text_response.text)
 
 
 def parse_comments(soup):
