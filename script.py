@@ -24,11 +24,11 @@ def download_txt(base_url, title, number, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
     book = os.path.join(folder, f'{number}. {title}.txt')
-    payload = {'id': number }
+    payload = {'id': number}
     text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
-    with open(book, "w", encoding="utf-8") as file:
-        file.write(text_response.text)
+    with open(book, 'w', encoding='utf-8') as text_file:
+        text_file.write(text_response.text)
 
 
 def parse_comments(soup):
@@ -44,20 +44,18 @@ def parse_book_genre(soup):
     return genres
 
 
-def parse_book_image(response):
-    soup = BeautifulSoup(response.content, 'lxml')
-    return soup.select_one('div.bookimage img')['src']
-
-
-def download_book_image(image_src, base_url, folder):
+def download_book_image(response, base_url, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
-    image_url = urljoin(base_url, image_src)
-    image_response = requests.get(image_url)
-    image_response.raise_for_status()
-    image = os.path.join(folder, sanitize_filename(image_src))
-    with open(image, 'wb') as image_file:
-        image_file.write(image_response.content)
+    soup = BeautifulSoup(response.content, 'lxml')
+    image_src = soup.select_one('div.bookimage img')['src']
+    if 'nopic.gif' not in sanitize_filename(image_src):
+        image_url = urljoin(base_url, image_src)
+        image_response = requests.get(image_url)
+        image_response.raise_for_status()
+        image = os.path.join(folder, sanitize_filename(image_src))
+        with open(image, 'wb') as image_file:
+            image_file.write(image_response.content)
 
 
 def parse_book_args():
@@ -66,13 +64,13 @@ def parse_book_args():
         '--start_id',
         type=int,
         default=1,
-        help='Первая страница'
+        help='Первая страница',
     )
     parser.add_argument(
         '--end_id',
         type=int,
         default=100,
-        help='Последняя страница'
+        help='Последняя страница',
     )
     return parser.parse_args()
 
@@ -94,11 +92,10 @@ def main():
             page_info = {'Автор: ': author,
                          'Заголовок: ': title,
                          'Жанр: ': genre,
-                         'Комментарии: ': comments
+                         'Комментарии: ': comments,
                          }
-            image_src = parse_book_image(response)
-            if 'nopic.gif' not in sanitize_filename(image_src):
-                download_book_image(image_src, base_url, folder='covers/')
+
+            download_book_image(response, base_url, folder='covers/')
         except requests.HTTPError:
             print(f'No page at {url}')
 
