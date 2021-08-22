@@ -44,10 +44,9 @@ def parse_book_genre(soup):
     return genres
 
 
-def download_book_image(response, base_url, folder):
+def download_book_image(soup, base_url, folder):
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
-    soup = BeautifulSoup(response.content, 'lxml')
     image_src = soup.select_one('div.bookimage img')['src']
     if 'nopic.gif' not in sanitize_filename(image_src):
         image_url = urljoin(base_url, image_src)
@@ -94,8 +93,7 @@ def main():
                          'Жанр: ': genre,
                          'Комментарии: ': comments,
                          }
-
-            download_book_image(response, base_url, folder='covers/')
+            download_book_image(soup, base_url, folder='covers/')
         except requests.HTTPError:
             print(f'No page at {url}')
 
