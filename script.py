@@ -3,11 +3,12 @@ import json
 import os
 from urllib.parse import urljoin, urlsplit
 
-from parse_tululu_category import parse_category
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
 from tqdm import trange
+
+from parse_tululu_category import parse_category
 
 
 def check_for_redirect(response):
@@ -17,7 +18,6 @@ def check_for_redirect(response):
 
 def parse_book_name(book_soup):
     title_soup = book_soup.select_one('#content h1')
-
     title, author = title_soup.text.strip().split('::')
     return title.strip(), author.strip()
 
@@ -92,11 +92,15 @@ def main():
         response.raise_for_status()
         check_for_redirect(response)
         soup = BeautifulSoup(response.text, 'lxml')
-        book_urls = parse_category(base_url, soup)
+        book_urls = parse_category(url, soup)
+        print(book_urls)
         for book_url in book_urls:
             book_response = requests.get(book_url)
             book_response.raise_for_status()
-            check_for_redirect(book_response)
+            try:
+                check_for_redirect(book_response)
+            except requests.HTTPError:
+                print()
             book_soup = BeautifulSoup(book_response.text, 'lxml')
             title, author = parse_book_name(book_soup)
             book_number = urlsplit(book_url).path.replace('b', '')
