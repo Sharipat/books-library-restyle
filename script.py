@@ -1,7 +1,9 @@
 import argparse
+import json
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
+from parse_tululu_category import parse_category
 import requests
 from bs4 import BeautifulSoup
 from pathvalidate import sanitize_filename
@@ -13,35 +15,23 @@ def check_for_redirect(response):
         raise requests.HTTPError
 
 
-def parse_book_name(soup):
-    title_soup = soup.find('div', id='content')
-    title_text = title_soup.find('h1').text.strip().split(' :: ')
-    title, author = title_text
+def parse_book_name(book_soup):
+    title_soup = book_soup.select_one('#content h1')
+
+    title, author = title_soup.text.strip().split('::')
     return title.strip(), author.strip()
 
 
-def download_txt(base_url, title, number, folder):
+def download_txt(base_url, title, book_number, folder):
+    book_number = int(sanitize_filename(book_number))
     folder = os.path.join(folder)
     os.makedirs(folder, exist_ok=True)
-    book = os.path.join(folder, f'{number}. {title}.txt')
-    payload = {'id': number}
+    book = os.path.join(folder, f'{title}.txt')
+    payload = {'id': book_number}
     text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
     with open(book, 'w', encoding='utf-8') as text_file:
         text_file.write(text_response.text)
-
-
-def parse_comments(soup):
-    comments = soup.select('div.texts span')
-    if comments:
-        comment_text = [comment.text for comment in comments]
-        return comment_text
-
-
-def parse_book_genre(soup):
-    genres_soup = soup.select('span.d_book a')
-    genres = [genre.text for genre in genres_soup]
-    return genres
 
 
 def download_book_image(soup, base_url, folder):
@@ -55,6 +45,20 @@ def download_book_image(soup, base_url, folder):
         image = os.path.join(folder, sanitize_filename(image_src))
         with open(image, 'wb') as image_file:
             image_file.write(image_response.content)
+        return image_url
+
+
+def parse_book_genre(book_soup):
+    genres_soup = book_soup.select('span.d_book a')
+    genres = [genre.text for genre in genres_soup]
+    return genres
+
+
+def parse_comments(book_soup):
+    comments = book_soup.select('div.texts span')
+    if comments:
+        comment_text = [comment.text for comment in comments]
+        return comment_text
 
 
 def parse_book_args():
@@ -77,25 +81,39 @@ def parse_book_args():
 def main():
     args = parse_book_args()
     base_url = 'https://tululu.org/'
-    for number in trange(args.start_id, (args.end_id + 1)):
-        url = urljoin(base_url, 'b{}/'.format(number))
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            check_for_redirect(response)
-            soup = BeautifulSoup(response.text, 'lxml')
-            title, author = parse_book_name(soup)
-            download_txt(base_url, title, number, folder='books/')
-            genre = parse_book_genre(soup)
-            comments = parse_comments(soup)
-            page_info = {'Автор: ': author,
-                         'Заголовок: ': title,
-                         'Жанр: ': genre,
-                         'Комментарии: ': comments,
+    scifi_url = 'https://tululu.org/l55/'
+    books_info = []
+    for number in trange(1, 5):
+        if number == 1:
+            url = scifi_url
+        else:
+            url = urljoin(scifi_url, '{}/'.format(number))
+        response = requests.get(url)
+        response.raise_for_status()
+        check_for_redirect(response)
+        soup = BeautifulSoup(response.text, 'lxml')
+        book_urls = parse_category(base_url, soup)
+        for book_url in book_urls:
+            book_response = requests.get(book_url)
+            book_response.raise_for_status()
+            check_for_redirect(book_response)
+            book_soup = BeautifulSoup(book_response.text, 'lxml')
+            title, author = parse_book_name(book_soup)
+            book_number = urlsplit(book_url).path.replace('b', '')
+            download_txt(base_url, title, book_number, folder='books/')
+            genre = parse_book_genre(book_soup)
+            comments = parse_comments(book_soup)
+            image_src = download_book_image(book_soup, base_url, folder='covers/')
+            page_info = {'Автор': author,
+                         'Заголовок': title,
+                         'Ссылка на книгу': book_url,
+                         'Ссылка на обложку': image_src,
+                         'Жанр': genre,
+                         'Комментарии': comments,
                          }
-            download_book_image(soup, base_url, folder='covers/')
-        except requests.HTTPError:
-            print(f'No page at {url}')
+            books_info.append(page_info)
+    with open('books_info.json', 'w+', encoding='utf8') as book_file:
+        json.dump(books_info, book_file, ensure_ascii=False, indent=4, sort_keys=True)
 
 
 if __name__ == '__main__':
