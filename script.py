@@ -64,15 +64,15 @@ def parse_comments(book_soup):
 def parse_book_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--start_id',
+        '--start_page',
         type=int,
         default=1,
         help='Первая страница',
     )
     parser.add_argument(
-        '--end_id',
+        '--end_page',
         type=int,
-        default=100,
+        default=702,
         help='Последняя страница',
     )
     return parser.parse_args()
@@ -83,7 +83,7 @@ def main():
     base_url = 'https://tululu.org/'
     scifi_url = 'https://tululu.org/l55/'
     books_info = []
-    for number in trange(1, 5):
+    for number in trange(args.start_page, args.end_page):
         if number == 1:
             url = scifi_url
         else:
