@@ -22,9 +22,9 @@ def parse_book_name(book_soup):
     return title.strip(), author.strip()
 
 
-def download_txt(base_url, title, book_number, folder):
+def download_txt(base_url, title, book_number, dest_folder, folder):
     book_number = int(sanitize_filename(book_number))
-    folder = os.path.join(folder)
+    folder = os.path.join(dest_folder, folder)
     os.makedirs(folder, exist_ok=True)
     book = os.path.join(folder, f'{title}.txt')
     payload = {'id': book_number}
@@ -34,18 +34,19 @@ def download_txt(base_url, title, book_number, folder):
         text_file.write(text_response.text)
 
 
-def download_book_image(soup, base_url, folder):
-    folder = os.path.join(folder)
+def download_book_image(skip_img, soup, base_url, dest_folder, folder):
+    folder = os.path.join(dest_folder, folder)
     os.makedirs(folder, exist_ok=True)
-    image_src = soup.select_one('div.bookimage img')['src']
-    if 'nopic.gif' not in sanitize_filename(image_src):
-        image_url = urljoin(base_url, image_src)
-        image_response = requests.get(image_url)
-        image_response.raise_for_status()
-        image = os.path.join(folder, sanitize_filename(image_src))
-        with open(image, 'wb') as image_file:
-            image_file.write(image_response.content)
-        return image_url
+    if skip_img is False:
+        image_src = soup.select_one('div.bookimage img')['src']
+        if 'nopic.gif' not in sanitize_filename(image_src):
+            image_url = urljoin(base_url, image_src)
+            image_response = requests.get(image_url)
+            image_response.raise_for_status()
+            image = os.path.join(folder, sanitize_filename(image_src))
+            with open(image, 'wb') as image_file:
+                image_file.write(image_response.content)
+            return image_url
 
 
 def parse_book_genre(book_soup):
@@ -75,11 +76,37 @@ def parse_book_args():
         default=702,
         help='Последняя страница',
     )
+    parser.add_argument(
+        '--dest_folder',
+        help='Путь к каталогу',
+        default='library',
+        type=str
+    )
+    parser.add_argument(
+        '--skip_imgs',
+        help='Не скачивать обложки книг',
+        action='store_true'
+    )
+
+    parser.add_argument(
+        '--skip_txt',
+        help='Не скачивать книги',
+        action='store_true'
+    )
+    parser.add_argument(
+        '--json_path',
+        help='путь к файлу json',
+        default='book_info.json',
+        type=str
+    )
+
     return parser.parse_args()
 
 
 def main():
     args = parse_book_args()
+    dest_folder = args.dest_folder
+    skip_img = args.skip_imgs
     base_url = 'https://tululu.org/'
     scifi_url = 'https://tululu.org/l55/'
     books_info = []
@@ -93,21 +120,21 @@ def main():
         check_for_redirect(response)
         soup = BeautifulSoup(response.text, 'lxml')
         book_urls = parse_category(url, soup)
-        print(book_urls)
         for book_url in book_urls:
             book_response = requests.get(book_url)
             book_response.raise_for_status()
             try:
                 check_for_redirect(book_response)
             except requests.HTTPError:
-                print()
+                print(f'No page at {book_url}')
             book_soup = BeautifulSoup(book_response.text, 'lxml')
             title, author = parse_book_name(book_soup)
             book_number = urlsplit(book_url).path.replace('b', '')
-            download_txt(base_url, title, book_number, folder='books/')
             genre = parse_book_genre(book_soup)
             comments = parse_comments(book_soup)
-            image_src = download_book_image(book_soup, base_url, folder='covers/')
+            if args.skip_txt is False:
+                download_txt(base_url, title, book_number, dest_folder, folder='books/')
+            image_src = download_book_image(skip_img, book_soup, base_url, dest_folder, folder='covers/')
             page_info = {'Автор': author,
                          'Заголовок': title,
                          'Ссылка на книгу': book_url,
@@ -116,7 +143,7 @@ def main():
                          'Комментарии': comments,
                          }
             books_info.append(page_info)
-    with open('books_info.json', 'w+', encoding='utf8') as book_file:
+    with open(args.json_path, 'w+', encoding='utf8') as book_file:
         json.dump(books_info, book_file, ensure_ascii=False, indent=4, sort_keys=True)
 
 
