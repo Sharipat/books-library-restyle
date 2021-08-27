@@ -11,6 +11,14 @@ from tqdm import trange
 from parse_tululu_category import parse_category
 
 
+def get_last_page(scifi_url):
+    page_response = requests.get(scifi_url)
+    page_response.raise_for_status()
+    page_soup = BeautifulSoup(page_response.text, 'lxml')
+    last_page = page_soup.select_one('a.npage:last-of-type').text
+    return int(last_page)
+
+
 def check_for_redirect(response):
     if response.history:
         raise requests.HTTPError
@@ -34,19 +42,18 @@ def download_txt(base_url, title, book_number, dest_folder, folder):
         text_file.write(text_response.text)
 
 
-def download_book_image(skip_img, soup, base_url, dest_folder, folder):
+def download_book_image(soup, base_url, dest_folder, folder):
     folder = os.path.join(dest_folder, folder)
     os.makedirs(folder, exist_ok=True)
-    if skip_img is False:
-        image_src = soup.select_one('div.bookimage img')['src']
-        if 'nopic.gif' not in sanitize_filename(image_src):
-            image_url = urljoin(base_url, image_src)
-            image_response = requests.get(image_url)
-            image_response.raise_for_status()
-            image = os.path.join(folder, sanitize_filename(image_src))
-            with open(image, 'wb') as image_file:
-                image_file.write(image_response.content)
-            return image_url
+    image_src = soup.select_one('div.bookimage img')['src']
+    if 'nopic.gif' not in sanitize_filename(image_src):
+        image_url = urljoin(base_url, image_src)
+        image_response = requests.get(image_url)
+        image_response.raise_for_status()
+        image = os.path.join(folder, sanitize_filename(image_src))
+        with open(image, 'wb') as image_file:
+            image_file.write(image_response.content)
+        return image_url
 
 
 def parse_book_genre(book_soup):
@@ -62,7 +69,7 @@ def parse_comments(book_soup):
         return comment_text
 
 
-def parse_book_args():
+def parse_book_args(last_page):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--start_page',
@@ -73,7 +80,7 @@ def parse_book_args():
     parser.add_argument(
         '--end_page',
         type=int,
-        default=702,
+        default=last_page + 1,
         help='Последняя страница',
     )
     parser.add_argument(
@@ -104,17 +111,13 @@ def parse_book_args():
 
 
 def main():
-    args = parse_book_args()
-    dest_folder = args.dest_folder
-    skip_img = args.skip_imgs
     base_url = 'https://tululu.org/'
     scifi_url = 'https://tululu.org/l55/'
+    last_page = get_last_page(scifi_url)
+    args = parse_book_args(last_page)
     books_info = []
     for number in trange(args.start_page, args.end_page):
-        if number == 1:
-            url = scifi_url
-        else:
-            url = urljoin(scifi_url, '{}/'.format(number))
+        url = urljoin(scifi_url, '{}/'.format(number))
         response = requests.get(url)
         response.raise_for_status()
         check_for_redirect(response)
@@ -122,8 +125,8 @@ def main():
         book_urls = parse_category(url, soup)
         for book_url in book_urls:
             book_response = requests.get(book_url)
-            book_response.raise_for_status()
             try:
+                book_response.raise_for_status()
                 check_for_redirect(book_response)
             except requests.HTTPError:
                 print(f'No page at {book_url}')
@@ -132,9 +135,12 @@ def main():
             book_number = urlsplit(book_url).path.replace('b', '')
             genre = parse_book_genre(book_soup)
             comments = parse_comments(book_soup)
-            if args.skip_txt is False:
-                download_txt(base_url, title, book_number, dest_folder, folder='books/')
-            image_src = download_book_image(skip_img, book_soup, base_url, dest_folder, folder='covers/')
+            if not args.skip_txt:
+                download_txt(base_url, title, book_number, args.dest_folder, folder='books/')
+            if not args.skip_imgs:
+                image_src = download_book_image(book_soup, base_url, args.dest_folder, folder='covers/')
+            else:
+                image_src = None
             page_info = {'Автор': author,
                          'Заголовок': title,
                          'Ссылка на книгу': book_url,
