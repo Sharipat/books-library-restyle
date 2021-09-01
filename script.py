@@ -27,7 +27,8 @@ def check_for_redirect(response):
 def parse_book_name(book_soup):
     title_soup = book_soup.select_one('#content h1')
     title, author = title_soup.text.strip().split('::')
-    return title.strip(), author.strip()
+
+    return title.strip()[0:30], author.strip()
 
 
 def download_txt(base_url, title, book_number, dest_folder, folder):
@@ -40,6 +41,7 @@ def download_txt(base_url, title, book_number, dest_folder, folder):
     text_response.raise_for_status()
     with open(book, 'w', encoding='utf-8') as text_file:
         text_file.write(text_response.text)
+    return book
 
 
 def download_book_image(soup, base_url, dest_folder, folder):
@@ -53,7 +55,7 @@ def download_book_image(soup, base_url, dest_folder, folder):
         image = os.path.join(folder, sanitize_filename(image_src))
         with open(image, 'wb') as image_file:
             image_file.write(image_response.content)
-        return image_url
+        return image
 
 
 def parse_book_genre(book_soup):
@@ -136,21 +138,23 @@ def main():
             genre = parse_book_genre(book_soup)
             comments = parse_comments(book_soup)
             if not args.skip_txt:
-                download_txt(base_url, title, book_number, args.dest_folder, folder='books/')
+                book_src = download_txt(base_url, title, book_number, args.dest_folder, folder='books/')
+            else:
+                book_src = None
             if not args.skip_imgs:
                 image_src = download_book_image(book_soup, base_url, args.dest_folder, folder='covers/')
             else:
                 image_src = None
-            page_info = {'Автор': author,
-                         'Заголовок': title,
-                         'Ссылка на книгу': book_url,
-                         'Ссылка на обложку': image_src,
-                         'Жанр': genre,
-                         'Комментарии': comments,
+            page_info = {'author': author,
+                         'title': title,
+                         'book_src': book_src,
+                         'image_src': image_src,
+                         'genre': genre,
+                         'comments': comments,
                          }
             books_info.append(page_info)
     with open(args.json_path, 'w+', encoding='utf8') as book_file:
-        json.dump(books_info, book_file, ensure_ascii=False, indent=4, sort_keys=True)
+        json.dump(books_info, book_file, ensure_ascii=False, indent=4)
 
 
 if __name__ == '__main__':
