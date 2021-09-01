@@ -1,5 +1,6 @@
 import collections
 import os
+import math
 
 from more_itertools import chunked
 import pandas
@@ -20,12 +21,19 @@ def render_page(env, books, dest_folder, pages_folder):
     folder = os.path.join(dest_folder, pages_folder)
     os.makedirs(folder, exist_ok=True)
     template = env.get_template('template.html')
-    chunked_books = chunked(books, 10)
+    chunked_books = list(chunked(books, 10))
+    pages_number = math.ceil(len(chunked_books))
     for number, page in enumerate(chunked_books, 1):
         page_path = os.path.join(folder, f'index{number}.html')
-        rendered_page = template.render(books_catalog=page)
-        with open(page_path, 'w', encoding="utf8") as file:
-            file.write(rendered_page)
+        previous_page = os.path.join(f'index{number - 1}.html') if number - 1 > 0 else None
+        next_page = os.path.join(f'index{number + 1}.html') if number + 1 <= pages_number else None
+        all_pages = [
+            {'number': number, 'url': os.path.join(f'index{number}.html')
+             } for number in range(1, pages_number + 1)]
+        rendered_page = template.render(
+            books_catalog=page, next_page=next_page, previous_page=previous_page, all_pages=all_pages)
+        with open(page_path, 'w', encoding="utf8") as page_file:
+            page_file.write(rendered_page)
 
 
 def main():
