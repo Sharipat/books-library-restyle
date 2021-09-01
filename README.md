@@ -32,6 +32,8 @@ python3 render_website.py
 
 [Ссылка на одну из страниц библиотеки](https://shirlusha.github.io/books-library-restyle/library/pages/index9.html).
 
+<img src="static/screenshot.png"/>
+
 
 ## Цели проекта
 
