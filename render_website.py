@@ -41,9 +41,9 @@ def main():
     env = Environment(
         loader=FileSystemLoader('templates'),
         autoescape=select_autoescape(['html', 'xml']))
-    json_path = os.getenv('JSON_PATH')
-    dest_folder = os.getenv('DEST_FOLDER')
-    pages_folder = os.getenv('PAGES_FOLDER')
+    json_path = os.getenv('JSON_PATH', 'book_info.json')
+    dest_folder = os.getenv('DEST_FOLDER', 'library')
+    pages_folder = os.getenv('PAGES_FOLDER', 'pages')
     books = get_books(json_path)
     render_page(env, books, dest_folder, pages_folder)
     server = Server()
