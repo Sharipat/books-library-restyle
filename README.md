@@ -14,11 +14,11 @@ pip install -r requirements.txt
 
 ## Пример запуска скрипта для скачивания данных для библиотеки
 
-В терминале введите команду, в которой после --start_page указывается первая желаемая страница, а после --end_page -
+В терминале введите команду, в которой после --start_page указывается первая желаемая страница сайта, а после --end_page -
 последняя. Если запустить скрипт без аргументов, по умолчанию будут скачаны данные с 1 по 701 страницу.
 
 ```
-python3 fetch_library_files.py --start_page 10 end_page 30
+python3 fetch_library_files.py --start_page 10 --end_page 30
 ```
 
 К данной команде возможно добавление опциональных аргументов:
@@ -29,7 +29,7 @@ python3 fetch_library_files.py --start_page 10 end_page 30
 - --json_path для указания пути к файлу json, по умолчанию **'book_info.json'**
 
 ```
-python3 fetch_library_files.py --start_page 10 end_page 30 --skip_imgs --skip_txt --dest_folder new_library --json_path books.json
+python3 fetch_library_files.py --start_page 10 --end_page 30 --skip_imgs --skip_txt --dest_folder new_library --json_path books.json
 ```
 
 После указанной команды на экран выведется прогресс-бар:
