@@ -1,12 +1,15 @@
 import collections
-import os
 import math
+import os
+from urllib.parse import unquote, urljoin
 
-from more_itertools import chunked
 import pandas
 from dotenv import load_dotenv
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
+from more_itertools import chunked
+
+BOOKS_ON_PAGE = 10
 
 
 def get_books(json_path):
@@ -17,12 +20,14 @@ def get_books(json_path):
     return sorted(books.items())
 
 
-def render_page(env, books, dest_folder, pages_folder):
+def render_page(env, books, dest_folder, pages_folder, static_url):
     folder = os.path.join(dest_folder, pages_folder)
     os.makedirs(folder, exist_ok=True)
     template = env.get_template('template.html')
-    chunked_books = list(chunked(books, 10))
+    chunked_books = list(chunked(books, BOOKS_ON_PAGE))
     pages_number = math.ceil(len(chunked_books))
+    covers_path = urljoin(dest_folder, 'covers/nopic.gif')
+    covers_url = unquote(covers_path)
     for number, page in enumerate(chunked_books, 1):
         page_path = os.path.join(folder, f'index{number}.html')
         previous_page = os.path.join(f'index{number - 1}.html') if number - 1 > 0 else None
@@ -30,8 +35,9 @@ def render_page(env, books, dest_folder, pages_folder):
         all_pages = [
             {'number': number, 'url': os.path.join(f'index{number}.html')
              } for number in range(1, pages_number + 1)]
-        rendered_page = template.render(
-            books_catalog=page, next_page=next_page, previous_page=previous_page, all_pages=all_pages)
+        rendered_page = template.render(static_url=static_url, covers_url=covers_url,
+                                        books_catalog=page, next_page=next_page, previous_page=previous_page,
+                                        all_pages=all_pages)
         with open(page_path, 'w', encoding="utf8") as page_file:
             page_file.write(rendered_page)
 
@@ -44,8 +50,9 @@ def main():
     json_path = os.getenv('JSON_PATH', 'book_info.json')
     dest_folder = os.getenv('DEST_FOLDER', 'library')
     pages_folder = os.getenv('PAGES_FOLDER', 'pages')
+    static_url = os.getenv('STATIC_URL')
     books = get_books(json_path)
-    render_page(env, books, dest_folder, pages_folder)
+    render_page(env, books, dest_folder, pages_folder, static_url)
     server = Server()
     server.watch('template.html', render_page)
     server.serve(root='.')

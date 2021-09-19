@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Sci-Fi Library</title>
-    <link rel="stylesheet" href='../../static/bootstrap.min.css'>
+    <link rel="icon" type="image/png" href="../../{{ static_url }}favicon.ico">
+    <link rel="stylesheet" href='../../{{ static_url }}bootstrap.min.css'>
 </head>
 <body>
 <!--================Header Menu Area =================-->
@@ -14,7 +15,7 @@
 </header>
 <!--================Header Menu Area =================-->
 <nav aria-label="Page navigator">
-       <ul class="pagination justify-content-center mt-4">
+    <ul class="pagination justify-content-center mt-4">
         <li class="page-item {%if not previous_page %} disabled {% endif %}">
             <a class="page-link" href="{{ previous_page | urlencode }}">Предыдущая</a>
         </li>
@@ -33,7 +34,7 @@
 <!--================ Start Footer Area =================-->
 <footer class="footer-area section-padding">
     <div class="container">
-        <div class="row row-cols-1 row-cols-md-2 text-center">
+        <div class="row row-cols-1 row-cols-md-2">
             {% for title, books in books_catalog %}
             <div class="col-lg-6">
                 <div class="card mb-4 rounded-3 shadow-sm" style="max-width: 540px;">
@@ -43,7 +44,7 @@
                             {%if book.image_src%}
                             <img src="../../{{book.image_src | urlencode}}" class="card-img" alt="{{ book.title }}">
                             {% else %}
-                            <img src='../covers/nopic.gif' class="card-img" alt="{{ book.title }}">
+                            <img src='../../{{ covers_url }}' class="card-img" alt="{{ book.title }}">
                             {% endif %}
                         </div>
                         <div class="col-md-8">
@@ -53,12 +54,12 @@
                                 <p class="card-text">{{ book.author.split()[0] }}</p>
                                 {% for genre in book.genre %}
                                 <div>
-                                    <button type="button" class="btn btn-sm btn-secondary mb-3" disabled>{{genre}}</button>
+                                    <span class="badge bg-secondary">{{genre}}</span>
                                 </div>
                                 {% endfor %}
 
-                                <p class="card-text mt-md-3"><a href="../../{{book.book_src | urlencode}}"
-                                                                class="btn btn-primary btn-lg active" role="button"
+                                <p class="card-text mt-md-5 text-center"><a href="../../{{book.book_src | urlencode}}"
+                                                                class="btn btn-secondary btn-lg active" role="button"
                                                                 aria-pressed="true" target="_blank">Читать</a>
                                 </p>
                             </div>
@@ -72,7 +73,7 @@
     </div>
 </footer>
 <!--================ End Footer Area =================-->
-<script src="../../static/jquery-3.5.1.slim.min.js"></script>
-<script src='../../static/bootstrap.bundle.min.js'></script>
+<script src="{{ static_url }}jquery-3.5.1.slim.min.js"></script>
+<script src='{{ static_url }}bootstrap.bundle.min.js'></script>
 </body>
 </html>
