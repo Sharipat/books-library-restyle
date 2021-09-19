@@ -7,6 +7,11 @@
     <title>Sci-Fi Library</title>
     <link rel="icon" type="image/png" href="../../{{ static_url }}favicon.ico">
     <link rel="stylesheet" href='../../{{ static_url }}bootstrap.min.css'>
+    <style>
+        .paginator-button-color {
+            color: #6a1a21;
+        }
+    </style>
 </head>
 <body>
 <!--================Header Menu Area =================-->
@@ -20,13 +25,13 @@
             <a class="page-link" href="{{ previous_page | urlencode }}">Предыдущая</a>
         </li>
         {% for page in all_pages %}
-            {% if page.number == current_page_number %}
-                <li class="page-item active" aria-current="page">
+        {% if page.number == current_page_number %}
+        <li class="page-item active paginator-button-color" aria-current="page">
             {% else %}
-                <li class="page-item">
-        {% endif %}
-                    <a class="page-link" href="{{ page.url | urlencode}}">{{ page.number }}</a>
-                </li>
+        <li class="page-item">
+            {% endif %}
+            <a class="page-link" href="{{ page.url | urlencode}}">{{ page.number }}</a>
+        </li>
         {% endfor %}
         <li class="page-item {% if not next_page %} disabled {% endif %}">
             <a class="page-link" href="{{ next_page | urlencode }}">Следующая</a>
@@ -57,15 +62,14 @@
                                 <p class="card-text">{{ book.author.split()[0] }}</p>
                                 {% for genre in book.genre %}
                                 <div>
-                                    <span class="badge rounded-pill bg-secondary">{{genre}}</span>
+                                    <span class="badge bg-light text-dark">{{genre}}</span>
                                 </div>
                                 {% endfor %}
 
-                                <p class="card-text mt-md-5 text-center"><a href="../../{{book.book_src | urlencode}}"
-                                                                            class="btn btn-secondary btn-lg active"
-                                                                            role="button"
-                                                                            aria-pressed="true"
-                                                                            target="_blank">Читать</a>
+                                <p class="card-text mt-md-5 text-center">
+                                    <a class="btn btn-outline-dark btn-lg active" aria-pressed="true" href="../../{{book.book_src | urlencode}}"
+                                           target="_blank"> Читать
+                                    </a>
                                 </p>
                             </div>
                             {% endfor %}
