@@ -19,11 +19,14 @@
         <li class="page-item {%if not previous_page %} disabled {% endif %}">
             <a class="page-link" href="{{ previous_page | urlencode }}">Предыдущая</a>
         </li>
-
         {% for page in all_pages %}
-        <li class="page-item {% if current_page == page.number %} active {% endif %}">
-            <a class="page-link" href="{{ page.url | urlencode}}">{{ page.number }}</a>
-        </li>
+            {% if page.number == current_page_number %}
+                <li class="page-item active" aria-current="page">
+            {% else %}
+                <li class="page-item">
+        {% endif %}
+                    <a class="page-link" href="{{ page.url | urlencode}}">{{ page.number }}</a>
+                </li>
         {% endfor %}
         <li class="page-item {% if not next_page %} disabled {% endif %}">
             <a class="page-link" href="{{ next_page | urlencode }}">Следующая</a>
@@ -59,8 +62,10 @@
                                 {% endfor %}
 
                                 <p class="card-text mt-md-5 text-center"><a href="../../{{book.book_src | urlencode}}"
-                                                                class="btn btn-secondary btn-lg active" role="button"
-                                                                aria-pressed="true" target="_blank">Читать</a>
+                                                                            class="btn btn-secondary btn-lg active"
+                                                                            role="button"
+                                                                            aria-pressed="true"
+                                                                            target="_blank">Читать</a>
                                 </p>
                             </div>
                             {% endfor %}
@@ -73,7 +78,7 @@
     </div>
 </footer>
 <!--================ End Footer Area =================-->
-<script src="{{ static_url }}jquery-3.5.1.slim.min.js"></script>
-<script src='{{ static_url }}bootstrap.bundle.min.js'></script>
+<script src="../../{{ static_url }}jquery-3.5.1.slim.min.js"></script>
+<script src='../../{{ static_url }}bootstrap.bundle.min.js'></script>
 </body>
 </html>
