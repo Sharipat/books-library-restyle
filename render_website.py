@@ -9,7 +9,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from livereload import Server
 from more_itertools import chunked
 
-BOOKS_ON_PAGE = 10
+BOOKS_ON_PAGE = 12
 
 
 def get_books(json_path):
@@ -54,8 +54,8 @@ def main():
     load_dotenv()
     on_reload()
     server = Server()
-    server.watch('templates/template.html', on_reload)
-    server.serve(root='.')
+    server.watch('template.html', on_reload)
+    server.serve()
 
 
 if __name__ == '__main__':

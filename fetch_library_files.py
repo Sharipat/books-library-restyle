@@ -27,8 +27,7 @@ def check_for_redirect(response):
 def parse_book_name(book_soup):
     title_soup = book_soup.select_one('#content h1')
     title, author = title_soup.text.strip().split('::')
-
-    return title.strip()[0:30], author.strip()
+    return title.strip()[0:35], author.strip()
 
 
 def download_txt(base_url, title, book_number, dest_folder, folder):
@@ -39,8 +38,11 @@ def download_txt(base_url, title, book_number, dest_folder, folder):
     payload = {'id': book_number}
     text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
-    with open(book, 'w', encoding='utf-8') as text_file:
-        text_file.write(text_response.text)
+    if text_response.history:
+        book = None
+    else:
+        with open(book, 'w', encoding='utf-8') as text_file:
+            text_file.write(text_response.text)
     return book
 
 
@@ -118,7 +120,7 @@ def main():
     last_page = get_last_page(scifi_url)
     args = parse_book_args(last_page)
     books_info = []
-    for number in trange(args.start_page, args.end_page):
+    for number in trange(args.start_page, args.end_page+1):
         url = urljoin(scifi_url, '{}/'.format(number))
         response = requests.get(url)
         response.raise_for_status()
@@ -152,9 +154,10 @@ def main():
                          'genre': genre,
                          'comments': comments,
                          }
-            books_info.append(page_info)
+            if page_info['book_src']:
+                books_info.append(page_info)
     with open(args.json_path, 'w+', encoding='utf8') as book_file:
-        json.dump(books_info, book_file, ensure_ascii=False, indent=4)
+        json.dump(books_info, book_file, ensure_ascii=False, indent=4, sort_keys=True)
 
 
 if __name__ == '__main__':
