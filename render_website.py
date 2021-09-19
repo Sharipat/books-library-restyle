@@ -37,7 +37,6 @@ def on_reload():
     covers_path = os.path.join(dest_folder, 'covers/nopic.gif')
     covers_url = unquote(covers_path)
     for page_number, page in enumerate(chunked_books, 1):
-        print(page_number)
         page_path = os.path.join(folder, f'index{page_number}.html')
         previous_page = os.path.join(f'index{page_number - 1}.html') if page_number - 1 > 0 else None
         next_page = os.path.join(f'index{page_number + 1}.html') if page_number + 1 <= pages_number else None
@@ -56,7 +55,7 @@ def main():
     on_reload()
     server = Server()
     server.watch('templates/template.html', on_reload)
-    server.serve(port=8000)
+    server.serve(root='.')
 
 
 if __name__ == '__main__':
