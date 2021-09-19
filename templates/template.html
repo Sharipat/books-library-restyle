@@ -7,11 +7,6 @@
     <title>Sci-Fi Library</title>
     <link rel="icon" type="image/png" href="../../{{ static_url }}favicon.ico">
     <link rel="stylesheet" href='../../{{ static_url }}bootstrap.min.css'>
-    <style>
-        .paginator-button-color {
-            color: #6a1a21;
-        }
-    </style>
 </head>
 <body>
 <!--================Header Menu Area =================-->
@@ -26,7 +21,7 @@
         </li>
         {% for page in all_pages %}
         {% if page.number == current_page_number %}
-        <li class="page-item active paginator-button-color" aria-current="page">
+        <li class="page-item active" aria-current="page">
             {% else %}
         <li class="page-item">
             {% endif %}
