@@ -1,7 +1,7 @@
 import collections
 import math
 import os
-from urllib.parse import unquote, urljoin
+from urllib.parse import unquote
 
 import pandas
 from dotenv import load_dotenv
@@ -24,6 +24,7 @@ def on_reload():
     env = Environment(
         loader=FileSystemLoader('templates'),
         autoescape=select_autoescape(['html', 'xml']))
+    template = env.get_template('template.html')
     json_path = os.getenv('JSON_PATH', 'book_info.json')
     dest_folder = os.getenv('DEST_FOLDER', 'library')
     pages_folder = os.getenv('PAGES_FOLDER', 'pages')
@@ -31,7 +32,6 @@ def on_reload():
     books = get_books(json_path)
     folder = os.path.join(dest_folder, pages_folder)
     os.makedirs(folder, exist_ok=True)
-    template = env.get_template('template.html')
     chunked_books = list(chunked(books, BOOKS_ON_PAGE))
     pages_number = math.ceil(len(chunked_books))
     covers_path = os.path.join(dest_folder, 'covers/nopic.gif')
@@ -46,16 +46,18 @@ def on_reload():
         rendered_page = template.render(static_url=static_url, covers_url=covers_url, current_page_number=page_number,
                                         books_catalog=page, next_page=next_page, previous_page=previous_page,
                                         all_pages=all_pages)
+
         with open(page_path, 'w', encoding="utf8") as page_file:
             page_file.write(rendered_page)
+    return folder
 
 
 def main():
     load_dotenv()
-    on_reload()
+    folder = on_reload()
     server = Server()
-    server.watch('template.html', on_reload)
-    server.serve(root='.')
+    server.watch('templates/*.html', on_reload)
+    server.serve(root='.', default_filename=f'{folder}/index1.html')
 
 
 if __name__ == '__main__':

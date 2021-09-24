@@ -25,7 +25,7 @@
             {% else %}
         <li class="page-item">
             {% endif %}
-            <a class="page-link" href="{{ page.url | urlencode}}">{{ page.number }}</a>
+            <a class="page-link" href="{{ page.url | urlencode }}">{{ page.number }}</a>
         </li>
         {% endfor %}
         <li class="page-item {% if not next_page %} disabled {% endif %}">
@@ -45,14 +45,13 @@
                         <div class="col-md-4">
                             {%for book in books%}
                             {%if book.image_src%}
-                            <img src="../../{{book.image_src | urlencode}}" class="card-img" alt="{{ book.title }}">
+                            <img src="../../{{ book.image_src | urlencode }}" class="card-img" alt="{{ book.title }}">
                             {% else %}
                             <img src='../../{{ covers_url }}' class="card-img" alt="{{ book.title }}">
                             {% endif %}
                         </div>
                         <div class="col-md-8">
                             <div class="card-body">
-
                                 <h5 class="card-title">{{ book.title }}</h5>
                                 <p class="card-text">{{ book.author.split()[0] }}</p>
                                 {% for genre in book.genre %}
@@ -62,8 +61,9 @@
                                 {% endfor %}
 
                                 <p class="card-text mt-md-5 text-center">
-                                    <a class="btn btn-outline-dark btn-lg active" aria-pressed="true" href="../../{{book.book_src | urlencode}}"
-                                           target="_blank"> Читать
+                                    <a class="btn btn-outline-dark btn-lg active" aria-pressed="true"
+                                       href="../../{{ book.book_src | urlencode }}"
+                                       target="_blank"> Читать
                                     </a>
                                 </p>
                             </div>
