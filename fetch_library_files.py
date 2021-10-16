@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlsplit
 
 import requests
 from bs4 import BeautifulSoup
-from pathvalidate import sanitize_filename
+from pathvalidate import sanitize_filename, sanitize_file_path
 from tqdm import trange
 
 from parse_tululu_category import parse_category
@@ -31,11 +31,11 @@ def parse_book_name(book_soup):
 
 
 def download_txt(base_url, title, book_number, dest_folder, folder):
-    book_title = sanitize_filename(title)
+    book_title = sanitize_filename(title.strip())
     book_number = int(sanitize_filename(book_number))
     folder = os.path.join(dest_folder, folder)
     os.makedirs(folder, exist_ok=True)
-    book = os.path.join(folder, f'{book_title}.txt')
+    book = urljoin(folder, f'{book_title}.txt').replace('...', '')
     payload = {'id': book_number}
     text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
