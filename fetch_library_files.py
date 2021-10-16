@@ -31,10 +31,11 @@ def parse_book_name(book_soup):
 
 
 def download_txt(base_url, title, book_number, dest_folder, folder):
+    book_title = sanitize_filename(title)
     book_number = int(sanitize_filename(book_number))
     folder = os.path.join(dest_folder, folder)
     os.makedirs(folder, exist_ok=True)
-    book = os.path.join(folder, f'{title}.txt')
+    book = os.path.join(folder, f'{book_title}.txt')
     payload = {'id': book_number}
     text_response = requests.get(f'{base_url}txt.php', params=payload)
     text_response.raise_for_status()
