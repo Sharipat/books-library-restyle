@@ -86,7 +86,7 @@ python3 render_website.py
 
 ## Пример работы сайта
 
-[Ссылка на одну из страниц библиотеки](https://shirlusha.github.io/books-library-restyle/library/pages/index7.html).
+[Ссылка на одну из страниц библиотеки](https://sharipat.github.io/books-library-restyle/library/pages/index7.html).
 
 <img src="static/screenshot.png"/>
 
